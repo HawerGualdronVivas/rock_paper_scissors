@@ -38,8 +38,15 @@ def threaded_client(conn, p, gameId):
                 else:
                     if data == "reset":
                         game.resetWent()
+                    elif data == "won1":
+                        print(data)
+                        game.updateScore(1)
+                    elif data == "won0":
+                        print(data)
+                        game.updateScore(0)    
                     elif data != "get":
                         game.play(p, data)
+                    
 
                     conn.sendall(pickle.dumps(game))
             else:

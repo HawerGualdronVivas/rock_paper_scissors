@@ -47,7 +47,9 @@ def redrawWindow(win, game, p):
 
         text = font.render("Player 2", 1, (0, 255, 255))
         win.blit(text, (380, 200))
-
+        score = game.getWins()
+        wins_text = font_score.render(f"Score: {score}", 1, (255, 255, 255))  # Obtener la puntuación del jugador actual
+        win.blit(wins_text, score_position)  # Mostrar la puntuación en la ventana
         move1 = game.get_player_move(0)
         move2 = game.get_player_move(1)
         if game.bothWent():
@@ -82,7 +84,8 @@ def redrawWindow(win, game, p):
 
 
 btns = [Button("ROCK", 50, 500, "#FF3E4D"), Button("SCISSORS", 250, 500, "#FAD02E"), Button("PAPER", 450, 500, "#0ABDE3")]
-
+score_position = (10, 10)
+font_score = pygame.font.SysFont("comicsans", 30)
 
 def main():
     run = True
@@ -95,6 +98,7 @@ def main():
         clock.tick(60)
         try:
             game = n.send("get")
+           
         except:
             run = False
             print("Couldn't get game")
@@ -109,16 +113,20 @@ def main():
                 run = False
                 print("Couldn't get game")
                 break
-
+            realWinner = game.winner()
+            print(realWinner)
             font = pygame.font.SysFont("comicsans", 90)
-            if (game.winner() == 1 and player == 1) or (game.winner() == 0 and player == 0):
+            if (realWinner == 1 and player == 1) or (realWinner == 0 and player == 0):
                 text = font.render("You Won!", 1, (255,0,0))
-            elif game.winner() == -1:
+                print("won"+str(realWinner))
+                n.send("won"+str(realWinner))
+            elif realWinner == -1:
                 text = font.render("Tie Game!", 1, (255,0,0))
             else:
                 text = font.render("You Lost...", 1, (255, 0, 0))
 
             win.blit(text, (width/2 - text.get_width()/2, height/2 - text.get_height()/2))
+            print(game.getWins())
             pygame.display.update()
             pygame.time.delay(2000)
 
