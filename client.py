@@ -1,4 +1,5 @@
 import pygame
+import time
 from network import Network
 import pickle
 pygame.font.init()
@@ -7,6 +8,10 @@ width = 700
 height = 700
 win = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Client")
+
+# Inicializa start_time como None
+start_time = None
+countdown_displayed = False  # Nueva variable global para controlar si se ha mostrado el mensaje de cuenta regresiva
 
 
 class Button:
@@ -17,6 +22,7 @@ class Button:
         self.color = color
         self.width = 150
         self.height = 100
+        self.blocked = False  # Nuevo atributo para indicar si el botón está bloqueado
 
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height))
@@ -27,13 +33,15 @@ class Button:
     def click(self, pos):
         x1 = pos[0]
         y1 = pos[1]
-        if self.x <= x1 <= self.x + self.width and self.y <= y1 <= self.y + self.height:
+        if self.x <= x1 <= self.x + self.width and self.y <= y1 <= self.y + self.height and not self.blocked:
             return True
         else:
             return False
 
 
 def redrawWindow(win, game, p):
+    global start_time, countdown_start, countdown_displayed
+
     win.fill((155, 89, 182))
 
     if not(game.connected()):
@@ -42,7 +50,7 @@ def redrawWindow(win, game, p):
         win.blit(text, (width/2 - text.get_width()/2, height/2 - text.get_height()/2))
     else:
         font = pygame.font.SysFont("comicsans", 60)
-        text = font.render("Player 1", 1, (0, 255,255)) 
+        text = font.render("Player 1", 1, (0, 255, 255)) 
         win.blit(text, (80, 200))
 
         text = font.render("Player 2", 1, (0, 255, 255))
@@ -78,13 +86,40 @@ def redrawWindow(win, game, p):
         for btn in btns:
             btn.draw(win)
 
+        # Implementación de la cuenta regresiva
+        if start_time is not None:
+            elapsed_time = 4 - (time.time() - start_time)
+            if elapsed_time > 0:
+                font = pygame.font.SysFont("comicsans", 30)
+                countdown_text = font.render(f"Tiempo: {int(elapsed_time)} seconds", 1, (255, 255, 255))
+                win.blit(countdown_text, (width - countdown_text.get_width() - 10, 10))
+            else:
+                if not countdown_displayed:
+                    start_time = time.time()  # Restablecer el inicio del contador cuando alcanza 0
+                    # Mostrar el mensaje cuando el tiempo alcance cero
+                    font = pygame.font.SysFont("comicsans", 40)
+                    message_text = font.render("Tiempo finalizado", 1, (255, 0, 0))
+                    win.blit(message_text, (width/2 - message_text.get_width()/2, height/2 - message_text.get_height()/2))
+                    pygame.display.update()
+                    pygame.time.delay(2000)
+                    countdown_displayed = True
+
+                # Bloquear los botones para que no puedan ser pulsados
+                for btn in btns:
+                    btn.blocked = True
+                    btn.text = "Locked"
+                    
+
     pygame.display.update()
+
+
 
 
 btns = [Button("ROCK", 50, 500, "#FF3E4D"), Button("SCISSORS", 250, 500, "#FAD02E"), Button("PAPER", 450, 500, "#0ABDE3")]
 
 
 def main():
+    global start_time
     run = True
     clock = pygame.time.Clock()
     n = Network()
@@ -99,6 +134,9 @@ def main():
             run = False
             print("Couldn't get game")
             break
+
+        if game.connected() and start_time is None:
+            start_time = time.time()  # Inicia el tiempo cuando ambos jugadores se conectan
 
         if game.bothWent():
             redrawWindow(win, game, player)
